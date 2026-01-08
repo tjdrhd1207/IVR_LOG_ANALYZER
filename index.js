@@ -51,7 +51,7 @@ function extractChannelHistoryFromText(text, channelNumber) {
 app.post('/analyze-ivr-log', async (req, res) => {
     try {
     const { mailContent, logImageBase64, logText } = req.body;
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // 속도가 빠른 flash 모델 추천
+    const model = genAI.getGenerativeModel({ model: "models/gemini-1.5-flash" }); // 속도가 빠른 flash 모델 추천
 
     // STEP1: 메일 내용에서 채널번호 추출하기
     const extractPrompt = `다음 이메일 본문에서 IVR 채널 번호(숫자 4자리)를 찾아줘. 
