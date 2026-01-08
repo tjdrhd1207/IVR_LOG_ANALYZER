@@ -3,8 +3,6 @@ const { Anthropic } = require('@anthropic-ai/sdk');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config();
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 const app = express();
 
 app.use(express.json({ limit: '20mb' }));
@@ -48,9 +46,11 @@ function extractChannelHistoryFromText(text, channelNumber) {
     [MCP 기능 이식] IVR 로그 분석 함수
     - 메일 본문과 로그 이미지를 입력 받아, 해당 채널 번호의 흐름을 추출해줌
 */
-/* app.post('/analyze-ivr-log', async (req, res) => {
+app.post('/analyze-ivr-log', async (req, res) => {
     try {
     const { mailContent, logImageBase64, logText } = req.body;
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ 
         model: "gemini-1.5-flash",
         apiVersion: 'v1'
@@ -101,9 +101,9 @@ function extractChannelHistoryFromText(text, channelNumber) {
         console.error('Error analyzing IVR log:', error);
         res.status(500).json({ error: 'Failed to analyze IVR log', details: error.message });
     }
-}); */
+});
 
-app.post('/analyze-ivr-log', async (req, res) => {
+/* app.post('/analyze-ivr-log', async (req, res) => {
     try {
         const { mailContent, logImageBase64, logText } = req.body;
 
@@ -122,7 +122,7 @@ app.post('/analyze-ivr-log', async (req, res) => {
         });
     }
 });
-
+ */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
