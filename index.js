@@ -48,7 +48,7 @@ function extractChannelHistoryFromText(text, channelNumber) {
     [MCP 기능 이식] IVR 로그 분석 함수
     - 메일 본문과 로그 이미지를 입력 받아, 해당 채널 번호의 흐름을 추출해줌
 */
-app.post('/analyze-ivr-log', async (req, res) => {
+/* app.post('/analyze-ivr-log', async (req, res) => {
     try {
     const { mailContent, logImageBase64, logText } = req.body;
     const model = genAI.getGenerativeModel({ 
@@ -100,6 +100,26 @@ app.post('/analyze-ivr-log', async (req, res) => {
     } catch (error) {
         console.error('Error analyzing IVR log:', error);
         res.status(500).json({ error: 'Failed to analyze IVR log', details: error.message });
+    }
+}); */
+
+app.post('/analyze-ivr-log', async (req, res) => {
+    try {
+        const { mailContent, logImageBase64, logText } = req.body;
+
+        // [테스트 포인트] 간단한 텍스트로 먼저 모델 작동 여부 확인
+        const testResult = await model.generateContent("Hi"); 
+        console.log("Gemini 연결 성공:", testResult.response.text());
+
+        // ... 나머지 분석 로직 ...
+    } catch (error) {
+        // 에러 발생 시 로그를 아주 자세하게 출력하도록 수정
+        console.error('상세 에러 로그:', error);
+        res.status(500).json({ 
+            error: 'Gemini 호출 실패', 
+            message: error.message,
+            stack: error.stack 
+        });
     }
 });
 
