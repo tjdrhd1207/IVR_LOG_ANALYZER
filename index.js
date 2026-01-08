@@ -111,7 +111,9 @@ app.post('/analyze-ivr-log', async (req, res) => {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         
         // 404 에러를 방지하기 위해 'models/' 경로를 명시합니다.
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const model = genAI.getGenerativeModel({ 
+            model: "models/gemini-1.5-flash" 
+        });
 
         // 가장 간단한 텍스트 요청
         const result = await model.generateContent("Hello Gemini! If you can hear me, say 'SUCCESS'.");
