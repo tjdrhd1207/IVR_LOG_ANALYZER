@@ -34,7 +34,7 @@ const anthropic = new Anthropic({
 */
 function extractChannelHistoryFromText(text, channelNumber) {
 
-    const lines = text.split('\n');    
+    const lines = text.split('\n');
     let channelLog = '';
     const targetPattern = `[${channelNumber}]`;
 
@@ -67,26 +67,34 @@ app.post('/analyze-ivr-log', async (req, res) => {
     try {
         const { mailContent, logImageBase64, logText } = req.body;
 
+        // 데이터가 넘어왔는지 로그 확인
+        console.log('Request received:', {
+            mailContent: !!mailContent,
+            hasImage: !!logImageBase64,
+            logLength: logText?.length
+        });
+
+
         // 1. 모델 설정 수정 (apiVersion 제거 - 최신 SDK는 자동으로 v1을 잡습니다)
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-        
+
         // base64 이미지 데이터 전처리
-        const pureBase64 = logImageBase64.includes(",") 
-        ? logImageBase64.split(",")[1] 
-        : logImageBase64;
+        const pureBase64 = (logImageBase64 && logImageBase64.includes(","))
+            ? logImageBase64.split(",")[1]
+            : (logImageBase64 || "");
 
 
         // STEP 1: 채널번호 추출 (response 뒤에 괄호 () 제거)
         const extractPrompt = `다음 이메일 본문에서 IVR 채널 번호(숫자 4자리)를 찾아줘. 
         만약 채널 번호가 보인다면 숫자만 딱 적어서 대답해주고, 없으면 'UNKNOWN'으로 대답해줘.
-        이메일 본문: "${mailContent}"`;        
+        이메일 본문: "${mailContent}"`;
 
         const extractResult = await model.generateContent(extractPrompt);
         // 중요: .response().text() -> .response.text() 로 수정
         const channelNumber = extractResult.response.text().trim();
         console.log('채널 번호 추출 성공:', channelNumber);
-        
+
         let filteredLog = logText;
 
         // STEP 2: 채널 번호 필터링
@@ -119,7 +127,19 @@ app.post('/analyze-ivr-log', async (req, res) => {
             4. 가독성을 위해 불렛 포인트(*)를 적극 활용해줘.
         `;
 
-        const finalAnalyze = await model.generateContent([analysisPrompt, imagePart]);
+        let finalAnalyze;
+
+        if (pureBase64) {
+            const imagePart = {
+                inlineData: {
+                    data: pureBase64,
+                    mimeType: "image/png"
+                }
+            };
+            finalAnalyze = await model.generateContent([analysisPrompt, imagePart]);
+        } else {
+            finalAnalyze = await model.generateContent(analysisPrompt);
+        }
         const analysisText = finalAnalyze.response.text(); // 여기도 괄호 없음 확인
 
         res.json({
