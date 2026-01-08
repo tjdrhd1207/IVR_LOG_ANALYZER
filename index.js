@@ -1,6 +1,9 @@
 const express = require('express');
 const { Anthropic } = require('@anthropic-ai/sdk');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config();
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const app = express();
 
@@ -48,25 +51,15 @@ function extractChannelHistoryFromText(text, channelNumber) {
 app.post('/analyze-ivr-log', async (req, res) => {
     try {
     const { mailContent, logImageBase64, logText } = req.body;
-
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // 속도가 빠른 flash 모델 추천
 
     // STEP1: 메일 내용에서 채널번호 추출하기
-    const extractResponse = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 100,
-        temperature: 0,
-        messages: [
-            {
-                role: 'user',
-                content: `다음 이메일 본문에서 IVR 채널 번호(숫자 4자리)를 찾아줘.
-                만약 채널 번호가 보인다면 숫자만 딱 적어서 대답해주고, 없으면 'UNKNOWN'으로 대답해줘.
-                이메일 본문: "${mailContent}"
-                `
-            },
-        ],
-    });
+    const extractPrompt = `다음 이메일 본문에서 IVR 채널 번호(숫자 4자리)를 찾아줘. 
+    만약 채널 번호가 보인다면 숫자만 딱 적어서 대답해주고, 없으면 'UNKNOWN'으로 대답해줘.
+    이메일 본문: "${mailContent}"`;        
 
-    const channelNumber = extractResponse.content[0].text.trim();
+    const extractResult = await model.generateContent(extractPrompt);
+    const channelNumber = extractResult.response().text().trim();
     console.log('채널 번호:', channelNumber);
     
     let filteredLog = logText; // 기본값은 전체 로그
@@ -75,46 +68,31 @@ app.post('/analyze-ivr-log', async (req, res) => {
     if (channelNumber !== 'UNKNOWN' && /^\d+$/.test(channelNumber)) {
         filteredLog = extractChannelHistoryFromText(logText, channelNumber);
     }
-    // Claude API 호출    
-    const response = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 1000,
-        temperature: 0,
-        // MCP TOOL 설정
-        messages: [
-            {
-                role: 'user',
-                content: [
-                    {
-                        type: 'image',
-                        source: {
-                            type: "base64",
-                            media_type: "image/png",
-                            data: logImageBase64,
-                        },
-                    },
-                    {
-                        type: 'text',
-                        text: [
-                            {
-                                type: 'text',
-                                text: `[메일 요약]: ${mailContent}
-                                [추출된 채널 로그]: ${filteredLog}
-                                [채널 번호]: ${channelNumber}\n
-                                위의 이미지 로그와 추출된 텍스트를 바탕으로 IVR 흐름에서 에러 원인을 분석해줘.`
-                            }
-                        ]
-                    }
-                ],
-            },
-        ],
-    });
+
+    // STEP 3: 최종 이미지 + 텍스트 분석
+    const imagePart = {
+        inlineData: {
+            data: logImageBase64.split(",")[1] || logImageBase64,
+            mimeType: "image/png"
+        }
+    }
+
+    const analysisPrompt = `
+        [메일 요약]: ${mailContent}
+        [추출된 채널로그]: ${filteredLog}
+        [채널번호]: ${channelNumber}
+
+        위의 이미지 로그와 추출된 텍스트를 바탕으로 IVR 흐름에서 에러 원인을 분석해줘.
+    `
+
+    const finalAnalyze = await model.generateContent([analysisPrompt, imagePart]);
+    const analysisText = finalAnalyze.response.text();
 
     // 분석 결과 반환
     res.json({
             success: true,
             channelNumber: channelNumber,
-            analysis: response.content[0].text,
+            analysis: analysisText,
         });
     } catch (error) {
         console.error('Error analyzing IVR log:', error);
