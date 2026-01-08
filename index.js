@@ -111,7 +111,8 @@ app.post('/analyze-ivr-log', async (req, res) => {
         const apiKey = process.env.GEMINI_API_KEY;
 
         // 라이브러리 대신 직접 주소를 입력합니다 (v1 사용)
-        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // index.js URL 수정
+        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.0-pro:generateContent?key=${apiKey}`;
 
         const payload = {
             contents: [{
