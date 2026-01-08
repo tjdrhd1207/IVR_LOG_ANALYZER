@@ -46,15 +46,13 @@ function extractChannelHistoryFromText(text, channelNumber) {
     [MCP 기능 이식] IVR 로그 분석 함수
     - 메일 본문과 로그 이미지를 입력 받아, 해당 채널 번호의 흐름을 추출해줌
 */
-/* app.post('/analyze-ivr-log', async (req, res) => {
+app.post('/analyze-ivr-log', async (req, res) => {
     try {
         const { mailContent, logImageBase64, logText } = req.body;
 
         // 1. 모델 설정 수정 (apiVersion 제거 - 최신 SDK는 자동으로 v1을 잡습니다)
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash" 
-        });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         // STEP 1: 채널번호 추출 (response 뒤에 괄호 () 제거)
         const extractPrompt = `다음 이메일 본문에서 IVR 채널 번호(숫자 4자리)를 찾아줘. 
@@ -102,7 +100,7 @@ function extractChannelHistoryFromText(text, channelNumber) {
         console.error('실제 발생 에러:', error); // 터미널 로그 확인용
         res.status(500).json({ error: 'Failed to analyze IVR log', details: error.message });
     }
-}); */
+});
 
 app.post('/analyze-ivr-log', async (req, res) => {
     try {
