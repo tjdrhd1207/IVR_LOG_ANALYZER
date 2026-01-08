@@ -112,7 +112,8 @@ app.post('/analyze-ivr-log', async (req, res) => {
 
         // 라이브러리 대신 직접 주소를 입력합니다 (v1 사용)
         // index.js URL 수정
-        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.0-pro:generateContent?key=${apiKey}`;
+        // URL의 모델명을 gemini-2.5-flash로 변경
+        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
         const payload = {
             contents: [{
