@@ -1,9 +1,26 @@
 const express = require('express');
+const cors = require('cors');
 const { Anthropic } = require('@anthropic-ai/sdk');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config();
 
 const app = express();
+
+const allowedOrigins = [
+    'https://ivr-loganalyzer-frontend.vercel.app/'
+];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // origin이 없거나 allowedOrigins에 포함된 경우 허용
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('CORS 정책에 의해 차단'));
+        }
+    },
+    credentials: true
+}));
 
 app.use(express.json({ limit: '20mb' }));
 
