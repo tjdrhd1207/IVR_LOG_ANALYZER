@@ -106,33 +106,42 @@ function extractChannelHistoryFromText(text, channelNumber) {
 
 app.post('/analyze-ivr-log', async (req, res) => {
     try {
-        console.log("테스트 요청 수신됨!");
-        
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        
-        // 404 에러를 방지하기 위해 'models/' 경로를 명시합니다.
-        const model = genAI.getGenerativeModel({ 
-            model: "models/gemini-1.5-flash" 
+        console.log("직접 호출(Fetch) 방식 테스트 시작");
+        const { mailContent, logImageBase64, logText } = req.body;
+        const apiKey = process.env.GEMINI_API_KEY;
+
+        // 라이브러리 대신 직접 주소를 입력합니다 (v1 사용)
+        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+        const payload = {
+            contents: [{
+                parts: [{ text: "Hello! If you receive this, reply with 'DIRECT_SUCCESS'." }]
+            }]
+        };
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         });
 
-        // 가장 간단한 텍스트 요청
-        const result = await model.generateContent("Hello Gemini! If you can hear me, say 'SUCCESS'.");
-        const responseText = result.response.text();
+        const data = await response.json();
 
-        console.log("Gemini 응답:", responseText);
+        if (!response.ok) {
+            throw new Error(`Google API Error: ${data.error ? data.error.message : response.statusText}`);
+        }
 
         res.json({
             success: true,
-            message: "Gemini가 응답했습니다!",
-            geminiReply: responseText
+            message: "직접 호출 성공!",
+            geminiReply: data.candidates[0].content.parts[0].text
         });
 
     } catch (error) {
-        console.error('테스트 중 에러 발생:', error);
+        console.error('직접 호출 에러:', error);
         res.status(500).json({ 
-            error: 'Test Failed', 
-            details: error.message,
-            stack: error.stack // 에러의 정확한 위치 확인용
+            error: 'Direct Fetch Failed', 
+            details: error.message 
         });
     }
 });
