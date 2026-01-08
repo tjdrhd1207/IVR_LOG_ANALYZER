@@ -7,21 +7,21 @@ require('dotenv').config();
 const app = express();
 
 const allowedOrigins = [
-    'https://ivr-loganalyzer-frontend.vercel.app/'
+    'https://ivr-loganalyzer-frontend.vercel.app'
 ];
 
 app.use(cors({
     origin: function (origin, callback) {
-        // origin이 없거나 allowedOrigins에 포함된 경우 허용
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        // 로컬 개발 환경(origin이 없음)이거나 허용 목록에 있는 경우
+        if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
+            console.log("차단된 Origin:", origin); // 디버깅용 로그
             callback(new Error('CORS 정책에 의해 차단'));
         }
     },
     credentials: true
 }));
-
 app.use(express.json({ limit: '20mb' }));
 
 const anthropic = new Anthropic({
