@@ -46,7 +46,7 @@ function extractChannelHistoryFromText(text, channelNumber) {
     [MCP 기능 이식] IVR 로그 분석 함수
     - 메일 본문과 로그 이미지를 입력 받아, 해당 채널 번호의 흐름을 추출해줌
 */
-app.post('/analyze-ivr-log', async (req, res) => {
+/* app.post('/analyze-ivr-log', async (req, res) => {
     try {
         const { mailContent, logImageBase64, logText } = req.body;
 
@@ -102,28 +102,39 @@ app.post('/analyze-ivr-log', async (req, res) => {
         console.error('실제 발생 에러:', error); // 터미널 로그 확인용
         res.status(500).json({ error: 'Failed to analyze IVR log', details: error.message });
     }
-});
+}); */
 
-/* app.post('/analyze-ivr-log', async (req, res) => {
+app.post('/analyze-ivr-log', async (req, res) => {
     try {
-        const { mailContent, logImageBase64, logText } = req.body;
+        console.log("테스트 요청 수신됨!");
+        
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        
+        // 404 에러를 방지하기 위해 'models/' 경로를 명시합니다.
+        const model = genAI.getGenerativeModel({ model: "models/gemini-1.5-flash" });
 
-        // [테스트 포인트] 간단한 텍스트로 먼저 모델 작동 여부 확인
-        const testResult = await model.generateContent("Hi"); 
-        console.log("Gemini 연결 성공:", testResult.response.text());
+        // 가장 간단한 텍스트 요청
+        const result = await model.generateContent("Hello Gemini! If you can hear me, say 'SUCCESS'.");
+        const responseText = result.response.text();
 
-        // ... 나머지 분석 로직 ...
+        console.log("Gemini 응답:", responseText);
+
+        res.json({
+            success: true,
+            message: "Gemini가 응답했습니다!",
+            geminiReply: responseText
+        });
+
     } catch (error) {
-        // 에러 발생 시 로그를 아주 자세하게 출력하도록 수정
-        console.error('상세 에러 로그:', error);
+        console.error('테스트 중 에러 발생:', error);
         res.status(500).json({ 
-            error: 'Gemini 호출 실패', 
-            message: error.message,
-            stack: error.stack 
+            error: 'Test Failed', 
+            details: error.message,
+            stack: error.stack // 에러의 정확한 위치 확인용
         });
     }
 });
- */
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
