@@ -53,6 +53,12 @@ app.post('/analyze-ivr-log', async (req, res) => {
         // 1. 모델 설정 수정 (apiVersion 제거 - 최신 SDK는 자동으로 v1을 잡습니다)
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        
+        // base64 이미지 데이터 전처리
+        const pureBase64 = logImageBase64.includes(",") 
+        ? logImageBase64.split(",")[1] 
+        : logImageBase64;
+
 
         // STEP 1: 채널번호 추출 (response 뒤에 괄호 () 제거)
         const extractPrompt = `다음 이메일 본문에서 IVR 채널 번호(숫자 4자리)를 찾아줘. 
@@ -74,8 +80,8 @@ app.post('/analyze-ivr-log', async (req, res) => {
         // STEP 3: 최종 이미지 + 텍스트 분석
         const imagePart = {
             inlineData: {
-                data: logImageBase64.includes(",") ? logImageBase64.split(",")[1] : logImageBase64,
-                mimeType: "image/png"
+                data: pureBase64, // 전처리된 순수 데이터 사용
+                mimeType: "image/png" // 또는 image/png
             }
         };
 
@@ -84,7 +90,10 @@ app.post('/analyze-ivr-log', async (req, res) => {
             [추출된 채널로그]: ${filteredLog}
             [채널번호]: ${channelNumber}
 
-            위의 이미지 로그와 추출된 텍스트를 바탕으로 IVR 흐름에서 에러 원인을 분석해줘.
+            위의 데이터와 첨부된 로그 이미지를 대조하여 다음을 분석해줘:
+            1. 현재 발생한 주요 에러나 특이사항이 무엇인가?
+            2. 로그상에서 흐름이 끊기거나 비정상 종료된 지점은 어디인가?
+            3. 해결을 위해 어떤 조치가 필요한가?            
         `;
 
         const finalAnalyze = await model.generateContent([analysisPrompt, imagePart]);
@@ -102,7 +111,7 @@ app.post('/analyze-ivr-log', async (req, res) => {
     }
 });
 
-app.post('/analyze-ivr-log', async (req, res) => {
+/* app.post('/analyze-ivr-log', async (req, res) => {
     try {
         console.log("직접 호출(Fetch) 방식 테스트 시작");
         const { mailContent, logImageBase64, logText } = req.body;
@@ -144,7 +153,7 @@ app.post('/analyze-ivr-log', async (req, res) => {
             details: error.message 
         });
     }
-});
+}); */
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
