@@ -52,7 +52,8 @@ app.post('/analyze-ivr-log', async (req, res) => {
     try {
     const { mailContent, logImageBase64, logText } = req.body;
     const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash" 
+        model: "gemini-1.5-flash",
+        apiVersion: 'v1'
     }); // 속도가 빠른 flash 모델 추천
 
     // STEP1: 메일 내용에서 채널번호 추출하기
